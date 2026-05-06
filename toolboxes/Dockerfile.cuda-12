@@ -17,6 +17,9 @@ ARG BRANCH=master
 RUN git clone -b ${BRANCH} --single-branch --recursive ${REPO} .
 
 # build + install
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:$LD_LIBRARY_PATH
+
 RUN cmake -S . -B build \
     -DGGML_CUDA=ON \
     -DCMAKE_CUDA_ARCHITECTURES=60 \
