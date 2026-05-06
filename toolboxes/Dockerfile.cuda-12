@@ -52,7 +52,6 @@ RUN apt-get update && apt-get install -y \
 
 # copy binaries and libraries
 COPY --from=builder /usr/local/ /usr/local/
-COPY --from=builder /opt/llama.cpp/build/bin/rpc-* /usr/local/bin/ || true
 
 # ldconfig
 RUN echo "/usr/local/lib"  > /etc/ld.so.conf.d/local.conf \
