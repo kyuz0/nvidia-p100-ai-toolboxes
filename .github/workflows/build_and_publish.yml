@@ -1,0 +1,62 @@
+name: Build & Publish P100 Toolbox
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [llama-cpp-update]
+
+env:
+  DOCKERHUB_REPO: docker.io/kyuz0/nvidia-p100-ai-toolboxes
+  LOCAL_PREFIX: llama-p100
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Free up runner disk space
+        run: |
+          echo "Before cleanup:" && df -h /
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL
+          docker system prune --all --force
+          docker builder prune --all --force
+          echo "After cleanup:" && df -h /
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set build timestamp
+        run: echo "BUILD_TS=$(date +%Y%m%dT%H%M%S)" >> $GITHUB_ENV
+
+      - name: Build & push Docker image
+        working-directory: toolboxes
+        shell: bash
+        run: |
+          set -euo pipefail
+          DF="Dockerfile.cuda-12"
+          NAME="cuda-12"
+          LI="${LOCAL_PREFIX}-${NAME}"
+          TAG="${NAME}_${BUILD_TS}"
+          IMM="${DOCKERHUB_REPO}:${TAG}"
+          CHN="${DOCKERHUB_REPO}:latest"
+
+          echo "→ Building ${DF}"
+          docker build --no-cache -t "${LI}" -f "${DF}" .
+
+          echo "→ Tag & push immutable → ${IMM}"
+          docker tag "${LI}" "${IMM}"
+          docker push "${IMM}"
+
+          echo "→ Tag & push channel → ${CHN}"
+          docker tag "${IMM}" "${CHN}"
+          docker push "${CHN}"
