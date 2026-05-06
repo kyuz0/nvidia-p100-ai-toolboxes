@@ -19,7 +19,9 @@ sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 ### 2. Create the Toolbox
 Create a new toolbox utilizing the published image:
 ```bash
-toolbox create -c llama-p100 --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest
+toolbox create -c llama-p100 \
+  --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest \
+  -- --device nvidia.com/gpu=all --security-opt seccomp=unconfined
 ```
 
 ### 3. Enter the Toolbox
