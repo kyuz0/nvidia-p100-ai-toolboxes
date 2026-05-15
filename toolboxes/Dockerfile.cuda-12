@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y \
     libcap2-bin \
     libnss-myhostname \
     curl \
+    libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/machine-id && touch /etc/machine-id \

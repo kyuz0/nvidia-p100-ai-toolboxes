@@ -10,18 +10,18 @@ This repository provides automatically built Toolbox (`containertoolbx.org`) ima
 ### 1. Prerequisites
 You need a system with `nvidia-container-toolkit` installed and configured so that your container runtime (Docker or Podman) can access the GPUs. You also need `toolbox` installed.
 
-For Podman:
+If you don't have `nvidia-container-toolkit` installed (e.g., you get a `command not found` error), please follow the [official installation instructions](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) for your distribution.
+
+For Podman, once installed, make sure the Container Device Interface (CDI) is generated:
 ```bash
-# Make sure CDI is configured if using podman
 sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 ```
 
 ### 2. Create the Toolbox
-Create a new toolbox utilizing the published image:
+Create a new toolbox utilizing the published image. Since Toolbox automatically handles GPU passthrough when `nvidia-container-toolkit` is present, no extra device flags are needed:
 ```bash
 toolbox create -c llama-p100 \
-  --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest \
-  -- --device nvidia.com/gpu=all --security-opt seccomp=unconfined
+  --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest
 ```
 
 ### 3. Enter the Toolbox
