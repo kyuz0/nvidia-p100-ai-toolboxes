@@ -1,4 +1,4 @@
-FROM ghcr.io/sasha0552/vllm:v0.10.0
+FROM ghcr.io/sasha0552/vllm:v0.9.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 
