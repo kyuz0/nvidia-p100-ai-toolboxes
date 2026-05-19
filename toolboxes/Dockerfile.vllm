@@ -1,4 +1,4 @@
-FROM ghcr.io/sasha0552/vllm:v0.9.1
+FROM ghcr.io/sasha0552/vllm:v0.8.5.post1
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -14,10 +14,15 @@ RUN apt-get update && apt-get install -y \
     libnss-myhostname \
     curl \
     libgomp1 \
+    dialog \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/machine-id && touch /etc/machine-id \
     && (userdel -r ubuntu || true) \
     && sed -i 's/^hosts:.*/& myhostname/' /etc/nsswitch.conf || true
+
+# Copy the launcher script
+COPY start_vllm.py /usr/local/bin/start-vllm
+RUN chmod +x /usr/local/bin/start-vllm
 
 CMD ["/bin/bash"]
