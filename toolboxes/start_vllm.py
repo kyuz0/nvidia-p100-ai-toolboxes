@@ -14,6 +14,7 @@ Key P100 constraints baked into this launcher:
 """
 import sys
 import os
+import json
 import shutil
 import tempfile
 import subprocess
@@ -25,62 +26,23 @@ VRAM_PER_GPU_GB = 16  # P100 = 16 GB HBM2
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = os.getenv("PORT", "8000")
 
-# ─── Model Catalogue ────────────────────────────────────────────────────────
-# Each entry is sized for 16 GB VRAM per P100.
-# Only FP16 / GPTQ-4bit / AWQ-4bit quants are usable (no Marlin, no FP8).
-# Context lengths are set conservatively to leave headroom for KV cache.
-MODEL_TABLE = {
-    # --- 1-GPU models (fit in single 16 GB P100) ---
+# ─── Load Model Catalogue from models.json ──────────────────────────────────
+SCRIPT_DIR = Path(__file__).parent.resolve()
 
-    # Qwen 2.5 7B Instruct – native FP16, ~14 GB
-    "Qwen/Qwen2.5-7B-Instruct": {
-        "trust_remote": False,
-        "valid_tp": [1],
-        "ctx": 4096,
-        "gpu_util": 0.85,
-        "enforce_eager": True,
-    },
+for candidate in [Path("/opt/models.json"), SCRIPT_DIR / "models.json"]:
+    if candidate.exists():
+        MODELS_JSON = candidate
+        break
+else:
+    print("Error: models.json not found in /opt or script directory.")
+    sys.exit(1)
 
-    # Llama 3.1 8B Instruct – native FP16, ~15 GB
-    "meta-llama/Meta-Llama-3.1-8B-Instruct": {
-        "trust_remote": False,
-        "valid_tp": [1, 2],
-        "ctx": 4096,
-        "gpu_util": 0.85,
-        "enforce_eager": True,
-    },
+with open(MODELS_JSON) as f:
+    _cfg = json.load(f)
 
-    # Qwen 2.5 14B Instruct GPTQ-Int4 – ~8 GB weights
-    "Qwen/Qwen2.5-14B-Instruct-GPTQ-Int4": {
-        "trust_remote": True,
-        "valid_tp": [1, 2],
-        "ctx": 4096,
-        "gpu_util": 0.85,
-        "enforce_eager": True,
-    },
-
-    # --- 2-GPU models (split across 2x P100 = 32 GB) ---
-
-    # Qwen 2.5 32B Instruct AWQ – ~17 GB weights
-    "Qwen/Qwen2.5-32B-Instruct-AWQ": {
-        "trust_remote": True,
-        "valid_tp": [2],
-        "ctx": 4096,
-        "gpu_util": 0.85,
-        "enforce_eager": True,
-    },
-
-    # Llama 3.1 70B Instruct AWQ – ~36 GB weights
-    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": {
-        "trust_remote": False,
-        "valid_tp": [4],
-        "ctx": 4096,
-        "gpu_util": 0.85,
-        "enforce_eager": True,
-    },
-}
-
-MODELS_TO_RUN = list(MODEL_TABLE.keys())
+GPU_UTIL       = float(_cfg["gpu_util"])
+MODEL_TABLE    = _cfg["models"]
+MODELS_TO_RUN  = _cfg["models_to_run"]
 
 
 # ─── GPU Detection ──────────────────────────────────────────────────────────
@@ -153,8 +115,8 @@ def configure_and_launch(model_idx, models, gpu_count):
     max_tp = max(valid_tps)
 
     current_tp = min(gpu_count, max_tp)
-    current_ctx = config.get("ctx", 4096)
-    current_util = config.get("gpu_util", 0.85)
+    current_ctx = int(config.get("ctx", 4096))
+    current_util = float(config.get("gpu_util", GPU_UTIL))
     current_seqs = 1
     use_eager = config.get("enforce_eager", True)  # Default ON for P100
     clear_cache = True
@@ -253,6 +215,8 @@ def configure_and_launch(model_idx, models, gpu_count):
 
     if config.get("trust_remote"):
         cmd.append("--trust-remote-code")
+    if config.get("language_model_only"):
+        cmd.append("--language-model-only")
     if use_eager:
         cmd.append("--enforce-eager")
 

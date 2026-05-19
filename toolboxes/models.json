@@ -1,0 +1,59 @@
+{
+  "_comment": "P100 vLLM model catalogue. 4x 16 GB HBM2 (64 GB total). FP16 ONLY — no compressed-tensors/AWQ/GPTQ (requires CC>=7.0), no MoE (kernel issues on Pascal). Dense FP16 models only.",
+  "gpu_util": "0.85",
+  "models": {
+    "meta-llama/Meta-Llama-3.1-8B-Instruct": {
+      "_note": "FP16 ~15 GB weights. Confirmed working on P100.",
+      "trust_remote": false,
+      "valid_tp": [1, 2, 4],
+      "max_num_seqs": "16",
+      "max_tokens": "8192",
+      "ctx": "4096",
+      "enforce_eager": true
+    },
+    "Qwen/Qwen2.5-7B-Instruct": {
+      "_note": "FP16 ~14 GB weights. Comfortable on TP1.",
+      "trust_remote": false,
+      "valid_tp": [1, 2, 4],
+      "max_num_seqs": "16",
+      "max_tokens": "8192",
+      "ctx": "4096",
+      "enforce_eager": true
+    },
+    "Qwen/Qwen3.5-9B": {
+      "_note": "FP16 ~18 GB weights. Needs TP2 minimum.",
+      "trust_remote": true,
+      "valid_tp": [2, 4],
+      "max_num_seqs": "16",
+      "max_tokens": "8192",
+      "ctx": "4096",
+      "enforce_eager": true
+    },
+    "Qwen/Qwen2.5-14B-Instruct": {
+      "_note": "FP16 ~28 GB weights. Needs TP2, comfortable on TP4.",
+      "trust_remote": false,
+      "valid_tp": [2, 4],
+      "max_num_seqs": "8",
+      "max_tokens": "4096",
+      "ctx": "4096",
+      "enforce_eager": true
+    },
+    "Qwen/Qwen2.5-32B-Instruct": {
+      "_note": "FP16 ~64 GB weights. Needs all 4 GPUs. Very tight fit.",
+      "trust_remote": false,
+      "valid_tp": [4],
+      "max_num_seqs": "4",
+      "max_tokens": "2048",
+      "ctx": "2048",
+      "enforce_eager": true,
+      "gpu_util": "0.92"
+    }
+  },
+  "models_to_run": [
+    "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "Qwen/Qwen3.5-9B",
+    "Qwen/Qwen2.5-14B-Instruct",
+    "Qwen/Qwen2.5-32B-Instruct"
+  ]
+}
