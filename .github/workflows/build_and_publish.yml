@@ -12,6 +12,16 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: Dockerfile.cuda-12
+            name: cuda-12
+            channel: latest
+          - dockerfile: Dockerfile.vulkan
+            name: vulkan
+            channel: vulkan
 
     steps:
       - name: Free up runner disk space
@@ -43,12 +53,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          DF="Dockerfile.cuda-12"
-          NAME="cuda-12"
+          DF="${{ matrix.dockerfile }}"
+          NAME="${{ matrix.name }}"
           LI="${LOCAL_PREFIX}-${NAME}"
           TAG="${NAME}_${BUILD_TS}"
           IMM="${DOCKERHUB_REPO}:${TAG}"
-          CHN="${DOCKERHUB_REPO}:latest"
+          CHN="${DOCKERHUB_REPO}:${{ matrix.channel }}"
 
           echo "→ Building ${DF}"
           docker build --no-cache -t "${LI}" -f "${DF}" .

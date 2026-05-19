@@ -19,16 +19,24 @@ sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 
 ### 2. Create the Toolbox
 Create a new toolbox utilizing the published image. Since Toolbox automatically handles GPU passthrough when `nvidia-container-toolkit` is present, no extra device flags are needed:
+
+For the standard CUDA backend:
 ```bash
 toolbox create -c llama-p100 \
   --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest
+```
+
+Alternatively, if you want to use the Vulkan backend (built on Fedora 43):
+```bash
+toolbox create -c llama-p100-vulkan \
+  --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:vulkan
 ```
 
 ### 3. Enter the Toolbox
 ```bash
 toolbox enter llama-p100
 ```
-*Note: The container resolves common Ubuntu UID 1000 conflicts, meaning your host user ID and home directories will map seamlessly into the container.*
+*Note: The toolboxes resolve common UID 1000 conflicts, meaning your host user ID and home directories will map seamlessly into the container.*
 
 ### 4. Run Llama.cpp
 You can run `llama-server` or `llama-cli` directly since the binaries are located in `/usr/local/bin/`.
