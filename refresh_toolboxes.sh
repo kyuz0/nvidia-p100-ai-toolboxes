@@ -7,6 +7,7 @@ declare -A TOOLBOXES
 
 TOOLBOXES["llama-p100-cuda"]="docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest"
 TOOLBOXES["llama-p100-vulkan"]="docker.io/kyuz0/nvidia-p100-ai-toolboxes:vulkan"
+TOOLBOXES["vllm-p100"]="docker.io/kyuz0/nvidia-p100-ai-toolboxes:vllm"
 
 function usage() {
   echo "Usage: $0 [all|toolbox-name1 toolbox-name2 ...]"

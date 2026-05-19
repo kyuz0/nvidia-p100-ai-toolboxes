@@ -32,18 +32,33 @@ toolbox create -c llama-p100-vulkan \
   --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:vulkan
 ```
 
+For the vLLM backend (powered by the community pascal-pkgs-ci fork):
+```bash
+toolbox create -c vllm-p100 \
+  --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:vllm
+```
+
 ### 3. Enter the Toolbox
 ```bash
 toolbox enter llama-p100-cuda
 ```
 *Note: The toolboxes resolve common UID 1000 conflicts, meaning your host user ID and home directories will map seamlessly into the container.*
 
-### 4. Run Llama.cpp
+### 4. Run Inference
+
+**With Llama.cpp:**
 You can run `llama-server` or `llama-cli` directly since the binaries are located in `/usr/local/bin/`.
 
 Example command using the first GPU:
 ```bash
 llama-server -m ~/models/Llama-3-8B-Instruct.Q4_K_M.gguf -ngl 99 -c 4096 --port 8080
+```
+
+**With vLLM:**
+If you entered the `vllm-p100` toolbox, you can start the OpenAI-compatible vLLM server:
+
+```bash
+vllm serve ~/models/Llama-3-8B-Instruct-GPTQ --max-model-len 4096
 ```
 
 ## Performance & Optimization Tips

@@ -1,0 +1,23 @@
+FROM ghcr.io/sasha0552/vllm:v0.10.0
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Add required Fedora Toolbox compatibility labels
+LABEL com.github.containers.toolbox="true" \
+      usage="This image is meant to be used with the toolbox command" \
+      summary="Nvidia P100 (sm_60) vLLM toolbox"
+
+# Install toolbox dependencies, handle the machine-id so DBUS propagates, and free UID 1000
+RUN apt-get update && apt-get install -y \
+    sudo \
+    libcap2-bin \
+    libnss-myhostname \
+    curl \
+    libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/machine-id && touch /etc/machine-id \
+    && (userdel -r ubuntu || true) \
+    && sed -i 's/^hosts:.*/& myhostname/' /etc/nsswitch.conf || true
+
+CMD ["/bin/bash"]
