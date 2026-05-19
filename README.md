@@ -22,7 +22,7 @@ Create a new toolbox utilizing the published image. Since Toolbox automatically 
 
 For the standard CUDA backend:
 ```bash
-toolbox create -c llama-p100 \
+toolbox create -c llama-p100-cuda \
   --image docker.io/kyuz0/nvidia-p100-ai-toolboxes:latest
 ```
 
@@ -34,7 +34,7 @@ toolbox create -c llama-p100-vulkan \
 
 ### 3. Enter the Toolbox
 ```bash
-toolbox enter llama-p100
+toolbox enter llama-p100-cuda
 ```
 *Note: The toolboxes resolve common UID 1000 conflicts, meaning your host user ID and home directories will map seamlessly into the container.*
 

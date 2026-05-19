@@ -26,7 +26,7 @@ done
 echo
 
 declare -A CMDS=(
-  [p100]="toolbox run -c llama-p100 -- /usr/local/bin/llama-bench"
+  [p100]="toolbox run -c llama-p100-cuda -- /usr/local/bin/llama-bench"
   [vulkan]="toolbox run -c llama-p100-vulkan -- /usr/local/bin/llama-bench"
 )
 
