@@ -25,4 +25,5 @@ RUN apt-get update && apt-get install -y \
 COPY start_vllm.py /usr/local/bin/start-vllm
 RUN chmod +x /usr/local/bin/start-vllm
 
+ENTRYPOINT []
 CMD ["/bin/bash"]
