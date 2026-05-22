@@ -28,6 +28,11 @@ RUN cmake -S . -B build \
     && cmake --build build --config Release -j$(nproc) \
     && cmake --install build --config Release
 
+# libs
+RUN mkdir -p /usr/local/lib \
+    && find /opt/llama.cpp/build -type f -name 'lib*.so*' -exec cp {} /usr/local/lib/ \; \
+    && ldconfig
+
 # runtime stage
 FROM docker.io/nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
