@@ -1,6 +1,7 @@
 FROM ghcr.io/sasha0552/vllm:v0.8.5.post1
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONNOUSERSITE=1
 
 # Add required Fedora Toolbox compatibility labels
 LABEL com.github.containers.toolbox="true" \

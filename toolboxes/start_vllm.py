@@ -229,6 +229,9 @@ def configure_and_launch(model_idx, models, gpu_count):
     # Disable torch.compile cache (avoids stale artefacts across versions)
     env["VLLM_DISABLE_COMPILE_CACHE"] = "1"
 
+    # Disable loading Python packages from host user site directory
+    env["PYTHONNOUSERSITE"] = "1"
+
     # ── Summary ──────────────────────────────────────────────────────────
     print()
     print("=" * 60)

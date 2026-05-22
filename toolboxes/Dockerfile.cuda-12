@@ -29,8 +29,9 @@ RUN cmake -S . -B build \
     && cmake --install build --config Release
 
 # libs
-RUN mkdir -p /usr/local/lib \
+RUN mkdir -p /usr/local/lib/stubs \
     && find /opt/llama.cpp/build -type f -name 'lib*.so*' -exec cp {} /usr/local/lib/ \; \
+    && cp /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/stubs/libcuda.so.1 \
     && ldconfig
 
 # runtime stage

@@ -6,19 +6,21 @@
       "_note": "FP16 ~15 GB weights. Confirmed working on P100.",
       "trust_remote": false,
       "valid_tp": [1, 2, 4],
-      "max_num_seqs": "16",
-      "max_tokens": "8192",
-      "ctx": "4096",
-      "enforce_eager": true
+      "max_num_seqs": "8",
+      "max_tokens": "2048",
+      "ctx": "2048",
+      "enforce_eager": true,
+      "gpu_util": "0.95"
     },
     "Qwen/Qwen2.5-7B-Instruct": {
       "_note": "FP16 ~14 GB weights. Comfortable on TP1.",
       "trust_remote": false,
       "valid_tp": [1, 2, 4],
-      "max_num_seqs": "16",
-      "max_tokens": "8192",
-      "ctx": "4096",
-      "enforce_eager": true
+      "max_num_seqs": "8",
+      "max_tokens": "2048",
+      "ctx": "2048",
+      "enforce_eager": true,
+      "gpu_util": "0.95"
     },
     "Qwen/Qwen3.5-9B": {
       "_note": "FP16 ~18 GB weights. Needs TP2 minimum.",

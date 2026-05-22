@@ -199,6 +199,7 @@ def run_throughput(model, tp_size, output_dir=RESULTS_DIR):
     env = os.environ.copy()
     env["VLLM_USE_V1"] = "0"
     env["VLLM_DISABLE_COMPILE_CACHE"] = "1"
+    env["PYTHONNOUSERSITE"] = "1"
 
     try:
         subprocess.run(cmd, check=True, env=env)
