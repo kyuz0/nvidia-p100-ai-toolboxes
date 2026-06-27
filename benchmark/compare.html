@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Comparison Dashboard: Tesla P100 vs Tesla V100 vs Radeon Instinct MI25</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-p100: #10b981; /* Emerald/Green for P100 */
+            --accent-v100: #3b82f6; /* Blue for V100 */
+            --accent-mi25: #ef4444; /* Red for AMD */
+            --gradient-accent: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --speedup-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tabs styling */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.3rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--gradient-accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        /* Table styling */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-p100 {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-p100);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-v100 {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-v100);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-mi25 {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-mi25);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .speedup-pos {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .speedup-neg {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .speedup-neutral {
+            color: var(--text-secondary);
+        }
+
+        .meta-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-tag strong {
+            color: var(--text-primary);
+        }
+
+        .ratio-cell {
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tesla P100 vs Tesla V100 vs Radeon Instinct MI25</h1>
+            <p>Interactive 3-Way GPU Performance Comparison Benchmark Dashboard</p>
+        </header>
+
+        <div class="meta-tags">
+            <div class="meta-tag">🟢 P100: <strong>Tesla P100 (16GB HBM2, sm_60, Pascal)</strong></div>
+            <div class="meta-tag">🔵 V100: <strong>Tesla V100 (16GB HBM2, sm_70, Volta)</strong></div>
+            <div class="meta-tag">🔴 MI25: <strong>Radeon Instinct MI25 (16GB HBM, gfx900, Vega)</strong></div>
+            <div class="meta-tag">🛠️ Software: <strong>llama.cpp CUDA vs ROCm (rocm7.2.1) + vLLM</strong></div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Llama.cpp Section -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🦙 Llama.cpp Inference Throughput</div>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchLlamaTab('pp512')">PP 512</button>
+                        <button class="tab-btn" onclick="switchLlamaTab('tg128')">TG 128</button>
+                        <button class="tab-btn" onclick="switchLlamaTab('pp32k')">PP (32k)</button>
+                        <button class="tab-btn" onclick="switchLlamaTab('tg32k')">TG (32k)</button>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="llamaChart"></canvas>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="llamaTable">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Size</th>
+                                <th>GPUs</th>
+                                <th>P100 (t/s)</th>
+                                <th>V100 (t/s)</th>
+                                <th>MI25 (t/s)</th>
+                                <th>V100 vs P100</th>
+                                <th>MI25 vs P100</th>
+                            </tr>
+                        </thead>
+                        <tbody id="llamaTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- vLLM Section -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🚀 vLLM Serving Throughput</div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="vllmChart"></canvas>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>TP Size</th>
+                                <th>P100 (Tokens/s)</th>
+                                <th>V100 (Tokens/s)</th>
+                                <th>MI25 (Tokens/s)</th>
+                                <th>V100 vs P100</th>
+                                <th>MI25 vs P100</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vllmTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data injected from benchmarks
+        const llamaData = [
+    {
+        "model": "Qwen3.5-122B-A10B-Q3_K_M",
+        "size": "52.54 GiB",
+        "gpus": "4",
+        "p100": {
+            "pp512": 168.44,
+            "tg128": 21.61,
+            "pp32k": 149.85,
+            "tg32k": 20.21
+        },
+        "v100": {
+            "pp512": 487.02,
+            "tg128": 48.67,
+            "pp32k": 464.36,
+            "tg32k": 46.41
+        },
+        "mi25": {
+            "pp512": 90.67,
+            "tg128": 15.89,
+            "pp32k": 15.16,
+            "tg32k": 9.35
+        }
+    },
+    {
+        "model": "Qwen3.5-35B-A3B-UD-Q4_K_XL",
+        "size": "20.70 GiB",
+        "gpus": "2",
+        "p100": {
+            "pp512": 373.76,
+            "tg128": 53.78,
+            "pp32k": 333.21,
+            "tg32k": 49.33
+        },
+        "v100": {
+            "pp512": 811.16,
+            "tg128": 102.09,
+            "pp32k": 824.86,
+            "tg32k": 91.47
+        },
+        "mi25": {
+            "pp512": 246.49,
+            "tg128": 34.55,
+            "pp32k": 28.13,
+            "tg32k": 19.52
+        }
+    },
+    {
+        "model": "Qwen3.5-35B-A3B-UD-Q8_K_XL",
+        "size": "45.33 GiB",
+        "gpus": "4",
+        "p100": {
+            "pp512": 412.61,
+            "tg128": 36.19,
+            "pp32k": 348.07,
+            "tg32k": 35.47
+        },
+        "v100": {
+            "pp512": 941.60,
+            "tg128": 84.62,
+            "pp32k": 866.05,
+            "tg32k": 76.42
+        },
+        "mi25": {
+            "pp512": 319.97,
+            "tg128": 26.41,
+            "pp32k": 40.38,
+            "tg32k": 16.67
+        }
+    },
+    {
+        "model": "Qwen3.6-27B-UD-Q4_K_XL",
+        "size": "16.39 GiB",
+        "gpus": "2",
+        "p100": {
+            "pp512": 139.87,
+            "tg128": 11.57,
+            "pp32k": 144.2,
+            "tg32k": 10.73
+        },
+        "v100": {
+            "pp512": 852.18,
+            "tg128": 34.13,
+            "pp32k": 622.78,
+            "tg32k": 28.14
+        },
+        "mi25": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        }
+    },
+    {
+        "model": "Qwen3.6-27B-UD-Q8_K_XL",
+        "size": "32.89 GiB",
+        "gpus": "3",
+        "p100": {
+            "pp512": 148.78,
+            "tg128": 10.08,
+            "pp32k": "-",
+            "tg32k": "-"
+        },
+        "v100": {
+            "pp512": 1012.61,
+            "tg128": 21.62,
+            "pp32k": 629.22,
+            "tg32k": 18.77
+        },
+        "mi25": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        }
+    },
+    {
+        "model": "Qwen3.6-35B-A3B-UD-Q4_K_XL",
+        "size": "20.81 GiB",
+        "gpus": "2",
+        "p100": {
+            "pp512": 373.21,
+            "tg128": 54.06,
+            "pp32k": 341.89,
+            "tg32k": 49.44
+        },
+        "v100": {
+            "pp512": 804.11,
+            "tg128": 103.76,
+            "pp32k": 837.46,
+            "tg32k": 92.97
+        },
+        "mi25": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        }
+    },
+    {
+        "model": "Qwen3.6-35B-A3B-UD-Q8_K_XL",
+        "size": "35.80 GiB",
+        "gpus": "3",
+        "p100": {
+            "pp512": 358.4,
+            "tg128": 54.16,
+            "pp32k": 342.73,
+            "tg32k": 49.54
+        },
+        "v100": {
+            "pp512": 670.61,
+            "tg128": 96.82,
+            "pp32k": 797.49,
+            "tg32k": 87.23
+        },
+        "mi25": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        }
+    },
+    {
+        "model": "gemma-4-26B-A4B-it-UD-Q4_K_XL",
+        "size": "15.90 GiB",
+        "gpus": "2",
+        "p100": {
+            "pp512": 517.55,
+            "tg128": 52.58,
+            "pp32k": 406.61,
+            "tg32k": 46.74
+        },
+        "v100": {
+            "pp512": 1615.92,
+            "tg128": 99.62,
+            "pp32k": 1318.48,
+            "tg32k": 87.07
+        },
+        "mi25": {
+            "pp512": 229.1,
+            "tg128": 36.31,
+            "pp32k": 23.98,
+            "tg32k": 20.15
+        }
+    },
+    {
+        "model": "gemma-4-26B-A4B-it-UD-Q8_K_XL",
+        "size": "25.94 GiB",
+        "gpus": "2",
+        "p100": {
+            "pp512": 552.72,
+            "tg128": 51.48,
+            "pp32k": 415.69,
+            "tg32k": 45.64
+        },
+        "v100": {
+            "pp512": 1430.12,
+            "tg128": 90.42,
+            "pp32k": 1258.70,
+            "tg32k": 79.44
+        },
+        "mi25": {
+            "pp512": 215.05,
+            "tg128": 36.29,
+            "pp32k": 22.3,
+            "tg32k": 20.07
+        }
+    },
+    {
+        "model": "gemma-4-E4B-it-UD-Q8_K_XL",
+        "size": "8.05 GiB",
+        "gpus": "1",
+        "p100": {
+            "pp512": 950.46,
+            "tg128": 45.71,
+            "pp32k": 601.24,
+            "tg32k": 41.62
+        },
+        "v100": {
+            "pp512": 4659.53,
+            "tg128": 87.01,
+            "pp32k": 2177.93,
+            "tg32k": 77.12
+        },
+        "mi25": {
+            "pp512": 277.0,
+            "tg128": 21.96,
+            "pp32k": 23.79,
+            "tg32k": 12.75
+        }
+    },
+    {
+        "model": "gpt-oss-120b-mxfp4",
+        "size": "-",
+        "gpus": "4",
+        "p100": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        },
+        "v100": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        },
+        "mi25": {
+            "pp512": "-",
+            "tg128": "-",
+            "pp32k": "-",
+            "tg32k": "-"
+        }
+    },
+    {
+        "model": "gpt-oss-20b-mxfp4",
+        "size": "11.27 GiB",
+        "gpus": "1",
+        "p100": {
+            "pp512": 748.22,
+            "tg128": 68.64,
+            "pp32k": 446.1,
+            "tg32k": 60.67
+        },
+        "v100": {
+            "pp512": 2521.60,
+            "tg128": 158.57,
+            "pp32k": 2043.74,
+            "tg32k": 134.14
+        },
+        "mi25": {
+            "pp512": 380.42,
+            "tg128": 87.74,
+            "pp32k": 167.69,
+            "tg32k": 26.82
+        }
+    }
+];
+        const vllmData = [
+    {
+        "model_display": "Meta-Llama-3.1-8B-Instruct",
+        "tp": "2",
+        "p100": {
+            "tokens_per_second": 143.79,
+            "requests_per_second": 0.199
+        },
+        "v100": {
+            "tokens_per_second": 1625.33,
+            "requests_per_second": 2.249
+        },
+        "mi25": {
+            "tokens_per_second": 229.25,
+            "requests_per_second": 0.635
+        }
+    },
+    {
+        "model_display": "Meta-Llama-3.1-8B-Instruct",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": 196.26,
+            "requests_per_second": 0.272
+        },
+        "v100": {
+            "tokens_per_second": 2483.35,
+            "requests_per_second": 3.436
+        },
+        "mi25": {
+            "tokens_per_second": 306.78,
+            "requests_per_second": 0.850
+        }
+    },
+    {
+        "model_display": "Qwen2.5-7B-Instruct",
+        "tp": "2",
+        "p100": {
+            "tokens_per_second": 148.37,
+            "requests_per_second": 0.204
+        },
+        "v100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen2.5-7B-Instruct",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": 269.30,
+            "requests_per_second": 0.370
+        },
+        "v100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen2.5-14B-Instruct",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": 133.45,
+            "requests_per_second": 0.183
+        },
+        "v100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen3.6-27B-GPTQ-4bit",
+        "tp": "2",
+        "p100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "v100": {
+            "tokens_per_second": 124.77,
+            "requests_per_second": 0.170
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen3.6-27B-GPTQ-4bit",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "v100": {
+            "tokens_per_second": 194.65,
+            "requests_per_second": 0.265
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen3.6-35B-A3B-GPTQ-Int4",
+        "tp": "2",
+        "p100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "v100": {
+            "tokens_per_second": 17.49,
+            "requests_per_second": 0.024
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen3.6-35B-A3B-GPTQ-Int4",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "v100": {
+            "tokens_per_second": 304.50,
+            "requests_per_second": 0.414
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    },
+    {
+        "model_display": "Qwen3.5-9B",
+        "tp": "4",
+        "p100": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        },
+        "v100": {
+            "tokens_per_second": 1438.30,
+            "requests_per_second": 1.956
+        },
+        "mi25": {
+            "tokens_per_second": "-",
+            "requests_per_second": "-"
+        }
+    }
+];
+
+        // Active state
+        let activeLlamaTab = 'pp512';
+        let llamaChartInst = null;
+        let vllmChartInst = null;
+
+        // Render helper for Ratio (comparing target vs baseline)
+        function getRatioCell(baseVal, targetVal, baseName, targetName) {
+            if (baseVal === '-' || targetVal === '-' || baseVal === 0) {
+                return `<span class="speedup-neutral">-</span>`;
+            }
+            const ratio = targetVal / baseVal;
+            if (ratio > 1) {
+                const pPlus = ((ratio - 1) * 100).toFixed(1);
+                return `<span class="speedup-pos">${targetName} +${pPlus}% (${ratio.toFixed(2)}x)</span>`;
+            } else if (ratio < 1) {
+                const pMinus = ((1 - ratio) * 100).toFixed(1);
+                return `<span class="speedup-neg">${baseName} +${pMinus}% (${(1/ratio).toFixed(2)}x)</span>`;
+            } else {
+                return `<span class="speedup-neutral">1.00x</span>`;
+            }
+        }
+
+        function switchLlamaTab(tabId) {
+            activeLlamaTab = tabId;
+            // Update active styling correctly
+            const btns = document.querySelectorAll('.tab-btn');
+            btns[0].classList.toggle('active', tabId === 'pp512');
+            btns[1].classList.toggle('active', tabId === 'tg128');
+            btns[2].classList.toggle('active', tabId === 'pp32k');
+            btns[3].classList.toggle('active', tabId === 'tg32k');
+
+            updateLlamaDashboard();
+        }
+
+        function updateLlamaDashboard() {
+            // Update Table
+            const tbody = document.getElementById('llamaTableBody');
+            tbody.innerHTML = '';
+
+            const chartLabels = [];
+            const p100Values = [];
+            const v100Values = [];
+            const mi25Values = [];
+
+            llamaData.forEach(row => {
+                const p100Val = row.p100[activeLlamaTab];
+                const v100Val = row.v100[activeLlamaTab];
+                const mi25Val = row.mi25[activeLlamaTab];
+
+                // Append to table
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${row.model}</strong></td>
+                    <td><span class="badge badge-p100">${row.size}</span></td>
+                    <td>${row.gpus}</td>
+                    <td>${p100Val}</td>
+                    <td>${v100Val}</td>
+                    <td>${mi25Val}</td>
+                    <td class="ratio-cell">${getRatioCell(p100Val, v100Val, 'P100', 'V100')}</td>
+                    <td class="ratio-cell">${getRatioCell(p100Val, mi25Val, 'P100', 'MI25')}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // Add to chart arrays if at least one value is valid
+                if (p100Val !== '-' || v100Val !== '-' || mi25Val !== '-') {
+                    chartLabels.push(row.model);
+                    p100Values.push(p100Val === '-' ? 0 : p100Val);
+                    v100Values.push(v100Val === '-' ? 0 : v100Val);
+                    mi25Values.push(mi25Val === '-' ? 0 : mi25Val);
+                }
+            });
+
+            // Update Chart
+            if (llamaChartInst) {
+                llamaChartInst.destroy();
+            }
+
+            const ctx = document.getElementById('llamaChart').getContext('2d');
+            llamaChartInst = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Tesla P100 (NVIDIA)',
+                            data: p100Values,
+                            backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Tesla V100 (NVIDIA)',
+                            data: v100Values,
+                            backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Radeon Instinct MI25 (AMD)',
+                            data: mi25Values,
+                            backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af' },
+                            title: { display: true, text: 'Tokens / Sec', color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f3f4f6' } }
+                    }
+                }
+            });
+        }
+
+        function buildVllmDashboard() {
+            const tbody = document.getElementById('vllmTableBody');
+            tbody.innerHTML = '';
+
+            const chartLabels = [];
+            const p100Values = [];
+            const v100Values = [];
+            const mi25Values = [];
+
+            vllmData.forEach(row => {
+                const p100Val = row.p100.tokens_per_second;
+                const v100Val = row.v100.tokens_per_second;
+                const mi25Val = row.mi25.tokens_per_second;
+
+                const tr = document.createElement('tr');
+                const fmtVal = (v) => (v !== '-' ? v.toFixed(2) : '-');
+                tr.innerHTML = `
+                    <td><strong>${row.model_display}</strong></td>
+                    <td>${row.tp}</td>
+                    <td>${fmtVal(p100Val)}</td>
+                    <td>${fmtVal(v100Val)}</td>
+                    <td>${fmtVal(mi25Val)}</td>
+                    <td class="ratio-cell">${getRatioCell(p100Val, v100Val, 'P100', 'V100')}</td>
+                    <td class="ratio-cell">${getRatioCell(p100Val, mi25Val, 'P100', 'MI25')}</td>
+                `;
+                tbody.appendChild(tr);
+
+                chartLabels.push(`${row.model_display} (TP ${row.tp})`);
+                p100Values.push(p100Val === '-' ? 0 : p100Val);
+                v100Values.push(v100Val === '-' ? 0 : v100Val);
+                mi25Values.push(mi25Val === '-' ? 0 : mi25Val);
+            });
+
+            // Render Chart
+            const ctx = document.getElementById('vllmChart').getContext('2d');
+            vllmChartInst = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Tesla P100 (NVIDIA)',
+                            data: p100Values,
+                            backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Tesla V100 (NVIDIA)',
+                            data: v100Values,
+                            backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Radeon Instinct MI25 (AMD)',
+                            data: mi25Values,
+                            backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af' },
+                            title: { display: true, text: 'Tokens / Sec', color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f3f4f6' } }
+                    }
+                }
+            });
+        }
+
+        // Init
+        updateLlamaDashboard();
+        buildVllmDashboard();
+    </script>
+</body>
+</html>

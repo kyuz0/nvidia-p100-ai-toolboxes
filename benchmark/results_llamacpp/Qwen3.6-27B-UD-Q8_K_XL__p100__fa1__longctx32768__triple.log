@@ -1,0 +1,26 @@
+ggml_cuda_init: found 3 CUDA devices (Total VRAM: 48807 MiB):
+  Device 0: Tesla P100-PCIE-16GB, compute capability 6.0, VMM: yes, VRAM: 16269 MiB
+  Device 1: Tesla P100-PCIE-16GB, compute capability 6.0, VMM: yes, VRAM: 16269 MiB
+  Device 2: Tesla P100-PCIE-16GB, compute capability 6.0, VMM: yes, VRAM: 16269 MiB
+| model                          |       size |     params | backend    | ngl | n_ubatch | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -------: | -: | --------------: | -------------------: |
+/opt/llama.cpp/ggml/src/ggml-cuda/ggml-cuda.cu:102: CUDA error
+/usr/local/lib/libggml-base.so.0(+0x1b27b)[0x7f4ff3bca27b]
+/usr/local/lib/libggml-base.so.0(ggml_print_backtrace+0x21f)[0x7f4ff3bca6ff]
+/usr/local/lib/libggml-base.so.0(ggml_abort+0x152)[0x7f4ff3bca8d2]
+/usr/local/lib/libggml-cuda.so.0(+0x1fe0d6)[0x7f4fec9500d6]
+/usr/local/lib/libggml-cuda.so.0(_ZN18ggml_cuda_pool_vmm5allocEmPm+0x1ef)[0x7f4fec968fff]
+/usr/local/lib/libggml-cuda.so.0(+0x206cd4)[0x7f4fec958cd4]
+/usr/local/lib/libggml-cuda.so.0(+0x20d624)[0x7f4fec95f624]
+/usr/local/lib/libggml-cuda.so.0(+0x2158f7)[0x7f4fec9678f7]
+/usr/local/lib/libggml-base.so.0(ggml_backend_sched_graph_compute_async+0x81f)[0x7f4ff3be87df]
+/usr/local/lib/libllama.so.0(_ZN13llama_context13graph_computeEP11ggml_cgraphb+0xa1)[0x7f4ff3d4dfc1]
+/usr/local/lib/libllama.so.0(_ZN13llama_context14process_ubatchERK12llama_ubatch14llm_graph_typeP22llama_memory_context_iR11ggml_status+0x115)[0x7f4ff3d4e405]
+/usr/local/lib/libllama.so.0(_ZN13llama_context6decodeERK11llama_batch+0x387)[0x7f4ff3d56f77]
+/usr/local/lib/libllama.so.0(llama_decode+0x10)[0x7f4ff3d58710]
+/usr/local/bin/llama-bench(+0x197ca)[0x560085c157ca]
+/usr/local/bin/llama-bench(+0x13ac9)[0x560085c0fac9]
+/lib/x86_64-linux-gnu/libc.so.6(+0x29d90)[0x7f4ff367bd90]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80)[0x7f4ff367be40]
+/usr/local/bin/llama-bench(+0x18695)[0x560085c14695]
+✖ ! [p100] Qwen3.6-27B-UD-Q8_K_XL__fa1 __longctx32768 failed (exit 0)
